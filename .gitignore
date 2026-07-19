@@ -1,0 +1,14 @@
+# Python bytecode and compilation artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local environment variables and secrets configurations
+.env
+*.env
+secrets.txt
+
+# Operating system metadata files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,29 @@
+# 1. Use a lightweight, secure base image
+FROM python:3.11-alpine
+
+# 2. Set the working directory inside the container
+WORKDIR /workspace
+
+# 3. Create a non-root system group and user for security
+RUN addgroup -S securegroup && adduser -S secureuser -G securegroup
+
+# 4. Copy only the requirements file first (optimizes build caching)
+COPY app/requirements.txt .
+
+# 5. Install dependencies cleanly without saving package caches
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 6. Copy the rest of our application code into the container
+COPY app/ ./app
+
+# 7. Change ownership of the files to our non-root user
+RUN chown -R secureuser:securegroup /workspace
+
+# 8. Switch from root to our limited security user
+USER secureuser
+
+# 9. Expose the port our Flask app listens on
+EXPOSE 5000
+
+# 10. Define the command to safely launch the application
+CMD ["python", "app/server.py"]
