@@ -1,3 +1,4 @@
+![Enterprise Security Pipeline](https://github.com/gireesh395/project-shield/actions/workflows/secret-guard.yml/badge.svg)
 # Project-Shield: Designing an Automated Multi-Stage Defense Grid
 
 ## Project Origin & Rationale
