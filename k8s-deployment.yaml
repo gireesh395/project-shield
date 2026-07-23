@@ -12,7 +12,7 @@ metadata:
 
 spec:
   # --- HIGH AVAILABILITY & FAULT TOLERANCE ---
-  replicas: 2  # Maintains 2 parallel Pods. If 1 fails, traffic automatically reroutes to the other.
+  replicas: 3  # Maintains 3 parallel Pods. If  fail, traffic automatically reroutes to the other.
 
   selector:
     matchLabels:
