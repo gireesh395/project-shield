@@ -1,0 +1,61 @@
+# ==============================================================================
+# Kubernetes Deployment: project-shield-app
+# Purpose: Manages app lifecycle, high availability, and container security
+# ==============================================================================
+
+apiVersion: apps/v1  # K8s API version for Deployment controllers
+kind: Deployment     # Resource type: Keeps application instances running and healthy
+metadata:
+  name: project-shield-app  # Unique resource identifier in the cluster
+  labels:
+    app: project-shield    # Key-value tag used for grouping and service discovery
+
+spec:
+  # --- HIGH AVAILABILITY & FAULT TOLERANCE ---
+  replicas: 2  # Maintains 2 parallel Pods. If 1 fails, traffic automatically reroutes to the other.
+
+  selector:
+    matchLabels:
+      app: project-shield  # Links this Deployment controller to Pods matching this label
+
+  template:
+    metadata:
+      labels:
+        app: project-shield  # Label applied to all generated Pod instances
+    spec:
+      containers:
+      - name: shield-container
+        image: gireesh395/project-shield:latest  # Target container image hosted on Docker Hub
+        ports:
+        - containerPort: 5000  # Exposed internal port for web traffic
+
+        # --- HARDENED SECURITY CONTEXT (Audited by Ring 3: Checkov) ---
+        securityContext:
+          # Process Control: Stops child processes from acquiring higher privileges than the parent
+          allowPrivilegeEscalation: false
+          
+          # Immutability: Locks the filesystem to read-only; prevents unauthorized file writes or script injection
+          readOnlyRootFilesystem: true
+          
+          # Principle of Least Privilege: Rejects execution if the container attempts to run as root (UID 0)
+          runAsNonRoot: true
+          
+          # Explicit Identity: Assigns a specific non-root user ID (10001) for application execution
+          runAsUser: 10001
+          
+          # Attack Surface Reduction: Strips away all default Linux kernel capabilities (e.g., raw sockets)
+          capabilities:
+            drop:
+            - ALL
+
+        # --- RESOURCE GOVERNANCE (Denial-of-Service & Crash Protection) ---
+        resources:
+          # Baseline Allocation: Guaranteed CPU and RAM reserved on the host node
+          requests:
+            cpu: "100m"      # 100 millicores (0.1 CPU core)
+            memory: "128Mi"  # 128 Megabytes RAM
+          
+          # Hard Limits: Ceiling cap to prevent memory leaks or runaway processes from crashing the server
+          limits:
+            cpu: "250m"      # 250 millicores (0.25 CPU core)
+            memory: "256Mi"  # 256 Megabytes RAM
