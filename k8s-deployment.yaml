@@ -26,6 +26,7 @@ spec:
       containers:
       - name: shield-container
         image: gireesh395/project-shield:latest  # Target container image hosted on Docker Hub
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000  # Exposed internal port for web traffic
 
