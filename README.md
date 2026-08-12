@@ -1,53 +1,57 @@
-![Enterprise Security Pipeline](https://github.com/gireesh395/project-shield/actions/workflows/secret-guard.yml/badge.svg)
+# 🛡️ Project Shield: Enterprise DevSecOps Defense Grid
 
-# Project-Shield: Designing an Automated Multi-Stage Defense Grid
+Most cloud breaches don't happen because of hyper-complex zero-day exploits. They happen when a developer accidentally hardcodes an AWS secret or deploys a container with an outdated, vulnerable base image.
 
-## Project Origin & Rationale
-Most security breaches don't happen because of advanced nation-state attacks; they happen because a developer is working late, gets tired, and accidentally hardcodes an infrastructure credential or leaves a critical vulnerability in a base container layer. 
-
-I engineered **Project-Shield** to demonstrate how an organization can implement low-friction, automated guardrails. The goal was simple: force the infrastructure to protect itself by building a continuous integration pipeline that acts as an un-bypassable gatekeeper.
+**Project Shield** turns GitHub Actions into an automated, multi-stage gatekeeper. Every commit must survive four sequential security rings before a single line of code reaches production.
 
 ---
 
-## The Architecture: Three Concentric Rings of Defense
-
-This project implements a multi-stage validation framework running three distinct security rings:
-
-### Ring 1: Secret-Guard (Static Code & History Analysis)
-* **The Problem:** Developers often think deleting a secret from a file fixes a leak. However, that secret remains immortal inside the hidden `.git/` history database.
-* **The Solution:** Integrated **Gitleaks** with `fetch-depth: 0`. This overrides the default shallow-cloning behavior, forcing the cloud runner to download and scan the *entire Git commit tree*. If an API key was committed weeks ago on a completely different branch, this gate flags it.
-
-### Ring 2: Container-Shield (Supply Chain & Image Auditing)
-* **The Problem:** Even if custom application code is 100% clean, base operating system layers or third-party packages (like Flask dependencies) can contain severe known vulnerabilities (CVEs).
-* **The Solution:** The pipeline automatically spins up an isolated runner host, builds our application into a localized container image using the custom `docker-shield` blueprint, and passes it directly to **Trivy** for vulnerability auditing.
-
-### Ring 3: IaC-Guard (Infrastructure-as-Code & Policy Auditing)
-* **The Problem:** Vulnerability-free application code can still be compromised if infrastructure configurations permit privileged container execution, root filesystem writes, or misconfigured runner policies.
-* **The Solution:** Integrated **Checkov** to run static policy scans across all Infrastructure-as-Code assets (Dockerfiles, GitHub Actions workflow manifests, and Kubernetes configurations), enforcing posture governance across the entire delivery lifecycle.
-
----
-
-## Quality Gate Enforcement (Policy Governance)
-
-To transform these scanners from passive reporters into actual security controls, strict policy governance is configured:
-
-* **`exit-code: '1'` (Ring 2):** If Trivy detects any `HIGH` or `CRITICAL` vulnerability within application dependencies, it terminates the pipeline with a hard failure, blocking deployment eligibility.
-* **`scanners: 'vuln'` (Ring 2):** Isolates the audit focus strictly to application-level dependencies, eliminating false positives from vendor-packaged OS tools and reducing alert fatigue.
-* **`soft_fail: true` (Ring 3):** Enforces policy reporting without halting build velocity during baseline rollout. This allows teams to establish compliance visibility before toggling to hard-fail enforcement.
+```
+[ Git Push / Pull Request ]
+            │
+            ▼
+┌────────────────────────────────────────────────────────┐
+│ Ring 1: Secrets & SAST   (Gitleaks + Semgrep)          │
+├────────────────────────────────────────────────────────┤
+│ Ring 2: Container Audit  (Aqua Trivy)                  │
+├────────────────────────────────────────────────────────┤
+│ Ring 3: IaC Compliance   (Checkov)                     │
+└────────────────────────────────────────────────────────┘
+            │
+     🟢 ALL RINGS PASS
+            │
+            ▼
+┌────────────────────────────────────────────────────────┐
+│ Ring 4: Cloud Deployment (Docker Hub ➔ AWS EKS Paris)  │
+└────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Pipeline Execution Overview
+## ⚡ The Four Defense Rings
 
-```text
-[ Developer Commit / PR ] 
-           │
-           ▼
-[ GitHub Actions Pipeline ]
-           │
-           ├─► Ring 1: Gitleaks  (Secret Detection)
-           ├─► Ring 2: Trivy     (Container Vulnerabilities)
-           └─► Ring 3: Checkov   (IaC Policy Compliance)
-                   │
-            🟢 PASS  => Pipeline Green
-            🔴 FAIL  => Deployment Blocked
+### 🔹 Ring 1: Secret Leaks & Code Flaws (Gitleaks + Semgrep)
+* **Gitleaks:** Scans the *entire* Git commit history (`fetch-depth: 0`). Deleting a leaked API key in a recent commit won't save you—Gitleaks digs into past commits and blocks the pipeline if a secret was ever exposed.
+* **Semgrep:** Analyzes raw Python application code (`app/server.py`) against OWASP Top 10 security standards, catching SQL injections, unencrypted handlers, and broken access controls before image compilation.
+
+### 🔹 Ring 2: Container Supply Chain (Aqua Trivy)
+* **Layer Inspection:** Builds a temporary local image and audits base OS packages and Python dependencies (`requirements.txt`) against live global CVE registries.
+* **Targeted Scanning:** Filters specifically for `HIGH` and `CRITICAL` vulnerabilities to eliminate minor alert noise and focus on real threats.
+
+### 🔹 Ring 3: Infrastructure Policy (Checkov)
+* **Manifest Auditing:** Static inspection across Kubernetes manifests (`k8s-deployment.yaml`), Terraform files (`main.tf`), and Dockerfiles.
+* **Misconfiguration Guard:** Blocks risky operational defaults—like running containers with `root` privileges, missing resource limits, or overly permissive security group rules.
+
+### 🔹 Ring 4: Automated Deployment (Docker Hub + AWS EKS)
+* **Strict Gatekeeping:** Runs **only** if Rings 1, 2, and 3 pass 100% green on target deployment branches (`master`/`main`).
+* **Artifact Push:** Authenticates to Docker Hub via GitHub Secrets and pushes `shield-app:latest`.
+* **EKS Handshake:** Authenticates to AWS IAM, fetches the API endpoint and TLS certificates for the Paris cluster (`eu-west-3`) via `aws eks update-kubeconfig`, and applies a zero-downtime rolling deployment.
+
+---
+
+## 🎯 Engine Controls
+
+* **`fetch-depth: 0` (Gitleaks):** Prevents shallow clones so past Git commits can't hide leaked keys.
+* **`severity: 'CRITICAL,HIGH'` (Trivy):** Stops builds instantly if severe, unpatched CVEs exist in container packages.
+* **`soft_fail: true` (Checkov):** Logs infrastructure drift and compliance warnings while establishing policy baselines.
+* **`needs: [ring1, ring2, ring3]` (GitHub Actions):** Enforces hard dependency—Ring 4 physical deployment is impossible if any scanning ring fails.
