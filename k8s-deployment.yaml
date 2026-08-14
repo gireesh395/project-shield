@@ -12,7 +12,7 @@ metadata:
 
 spec:
   # --- HIGH AVAILABILITY & FAULT TOLERANCE ---
-  replicas: 3  # Maintains 3 parallel Pods. If  fail, traffic automatically reroutes to the other.
+  replicas: 2  # Maintains 3 parallel Pods. If  fail, traffic automatically reroutes to the other.
 
   selector:
     matchLabels:
@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: shield-container
-        image: gireesh395/project-shield:latest  # Target container image hosted on Docker Hub
+        image: gireesh395/shield-app:latest  # Target container image hosted on Docker Hub
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000  # Exposed internal port for web traffic
