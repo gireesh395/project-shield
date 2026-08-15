@@ -3,8 +3,8 @@ FROM python:3.11-slim
 WORKDIR /app
 COPY app/ /app/
 
-# Force critical package vulnerabilities directly into container layers
-RUN pip install urllib3==1.24.1 Django==2.0.0
+# Install an outdated OS package with known CRITICAL CVEs
+RUN apt-get update && apt-get install -y --no-install-recommends wget=1.21-1+deb11u1 || true
 
 EXPOSE 5000
 CMD ["python", "server.py"]
