@@ -1,7 +1,10 @@
-FROM python:3.8-slim-buster
+FROM python:3.11-slim
+
 WORKDIR /app
 COPY app/ /app/
-RUN pip install -r requirements.txt
+
+# Force critical package vulnerabilities directly into container layers
+RUN pip install urllib3==1.24.1 Django==2.0.0
 
 EXPOSE 5000
 CMD ["python", "server.py"]
