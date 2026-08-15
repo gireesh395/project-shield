@@ -1,3 +1,4 @@
+AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 from flask import Flask
 import os
 
