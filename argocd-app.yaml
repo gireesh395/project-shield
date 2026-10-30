@@ -1,0 +1,26 @@
+# ==============================================================================
+# ArgoCD Application: Links GitHub 'master' to your Minikube Cluster
+# ==============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: project-shield-cd
+  namespace: argocd
+spec:
+  # --- SOURCE (Where my code lives) ---
+  project: default
+  source:
+    repoURL: 'https://github.com/gireesh395/project-shield.git'  # Your public repo URL
+    targetRevision: HEAD                                         # Tracks latest commit on master
+    path: '.'                                                    # Path where k8s-deployment.yaml sits
+
+  # --- DESTINATION (Where to deploy) ---
+  destination:
+    server: 'https://kubernetes.default.svc'                     # Local cluster API
+    namespace: default                                           # Deploys into default namespace
+
+  # --- GITOPS RECONCILIATION POLICY ---
+  syncPolicy:
+    automated:
+      prune: true     # Deletes K8s resources removed from Git
+      selfHeal: true  # Overwrites manual kubectl changes to keep Git as truth

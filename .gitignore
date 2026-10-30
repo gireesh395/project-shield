@@ -12,3 +12,18 @@ secrets.txt
 # Operating system metadata files
 .DS_Store
 Thumbs.db
+# Terraform state and local directories
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+# AWS CLI installer artifacts
+aws/
+awscliv2.zip
